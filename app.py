@@ -32,9 +32,7 @@ import time
 #----------------------------------------------------------------------------#
 
 app = Flask(__name__)
-#moment = Moment(app)
 app.config.from_object('config')
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://erickvilela:123mudar@localhost:5432/fyyurdb'
 db = SQLAlchemy(app)
 
 
@@ -123,11 +121,18 @@ def venues():
   for row in query_01:
       city = row.city
       state = row.state
+      #skip the loop to append City + State if already processed  
       if row.city+row.state in lines:
         continue
+      
+      #append city + state to lines[] as a identifier to skip it in the next loop  
       lines.append(row.city+row.state)
+
       query_02 = Venue.query.filter_by(city=city,state=state).all()
+
       venues = []
+
+      #appending all venues related to the City and State 
       for i in query_02:
         bloco = {
           'id' : i.id,
@@ -135,12 +140,14 @@ def venues():
         }
         venues.append(bloco)
 
+      #creating the branch with the City / State +  all venues related captured in previoous loop
       for i in query_02:
         bloco = {
           'city' : i.city,
           'state' : i.state,
           'venues' : venues
         }
+
       data.append(bloco)
   print(data)
   
@@ -177,10 +184,10 @@ def show_venue(venue_id):
   past_shows = Show.query.with_entities(Show.artist_id, Show.venue_id, Show.start_time, Venue.name, Artist.name, Artist.image_link).filter(Show.start_time < datetime.today()).join(Artist).join(Venue).filter_by(id=venue_id).all()
   upcoming_shows = Show.query.with_entities(Show.artist_id, Show.venue_id, Show.start_time, Venue.name, Artist.name, Artist.image_link).filter(Show.start_time > datetime.today()).join(Artist).join(Venue).filter_by(id=venue_id).all()
   
-  #print(past_shows)
+ 
 
   for i in past_shows:
-    #print(i.start_time)
+   
     data.append({
       'artist_id' : i.artist_id,
       'artist_name' : i[4],
@@ -262,10 +269,6 @@ def create_venue_submission():
   else:
     flash('Venue ' + request.form['name'] + ' was successfully listed!')
     return render_template('pages/home.html')
-  
-
-  # TODO: modify data to be the data object returned from db insertion
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
   
 
 @app.route('/venues/<venue_id>/delete', methods=['GET', 'POST'])
