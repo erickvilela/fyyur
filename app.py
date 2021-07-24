@@ -7,7 +7,7 @@ import dateutil.parser
 import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
-from flask_sqlalchemy import SQLAlchemy
+
 from sqlalchemy import join
 import logging
 from logging import Formatter, FileHandler
@@ -15,75 +15,28 @@ from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
 import sys
-from sqlalchemy.orm import load_only
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.dialects import postgresql
-from sqlalchemy import func
-from sqlalchemy.orm import backref
-from sqlalchemy.orm import relationship
 from datetime import datetime
 from datetime import date
 import time
 
 
+from sqlalchemy.orm import load_only
+#from sqlalchemy import create_engißne
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects import postgresql
+from sqlalchemy import func
+
+
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
+from models import db, Venue, Artist, Show
 
 app = Flask(__name__)
 app.config.from_object('config')
-db = SQLAlchemy(app)
-
-
-#----------------------------------------------------------------------------#
-# Models.
-#----------------------------------------------------------------------------#
-
+moment = Moment(app)
+db.init_app(app) # <-- Initializing with Flask instance.
 migrate = Migrate(app,db)
-
-class Venue(db.Model):
-    __tablename__ = 'venue'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    website_link = db.Column(db.String(400))
-    seeking_talent = db.Column(db.Boolean)
-    genres_list = db.Column(db.Text)
-    seeking_description = db.Column(db.String(500))
-
-
-class Artist(db.Model):
-    __tablename__ = 'artist'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres_list = db.Column(db.Text)
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
-    website_link = db.Column(db.String(250))
-    looking_venue = db.Column(db.Boolean)
-    seeking_desc = db.Column(db.String(500))
-
-
-class Show(db.Model):
-  __tablename__= 'shows'
-
-  id = db.Column(db.Integer, primary_key=True)
-  artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'))
-  venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'))
-  parent = relationship(Venue, backref=backref("venue", cascade="all,delete"))
-  start_time = db.Column(db.DateTime)
-
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -160,17 +113,22 @@ def search_venues():
   query = request.form.get('search_term')
   venues = Venue.query.filter(func.lower(Venue.name).contains(query)).with_entities(Venue.id, Venue.name).all()
   data=[]
-  for i in venues:
-    data.append ({
-      'id' : i.id,
-      'name': i.name,
-      'num_upcoming_shows': 0
-    })
-    response = {
-      'count': len(venues),
-      'data': data
-    }
-
+  if venues:
+    for i in venues:
+      data.append ({
+        'id' : i.id,
+        'name': i.name,
+        'num_upcoming_shows': 0
+      })
+      response = {
+        'count': len(venues),
+        'data': data
+      }
+  else:
+      response = {
+        'count':0
+      }
+  
   return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
 
 @app.route('/venues/<int:venue_id>')
@@ -307,14 +265,20 @@ def search_artists():
   query = request.form.get('search_term')
   artists = Artist.query.filter(func.lower(Artist.name).contains(query)).with_entities(Artist.id, Artist.name).all()
   data=[]
-  for i in artists:
-    data.append ({
-      'id' : i.id,
-      'name': i.name
-    })
+  response = []
+  if artists:
+    for i in artists:
+      data.append ({
+        'id' : i.id,
+        'name': i.name
+      })
+      response = {
+        'count': '1',
+        'data': data
+     }
+  else:
     response = {
-      'count': len(artists),
-      'data': data
+    'count': '0'
     }
   
   return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
