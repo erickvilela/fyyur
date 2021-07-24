@@ -1,14 +1,10 @@
-from app import app
 from flask_sqlalchemy import SQLAlchemy
+
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm import load_only
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.dialects import postgresql
-from sqlalchemy import func
 from sqlalchemy.orm import backref
 
-db = SQLAlchemy(app)
+
+db = SQLAlchemy()
 
 
 class Venue(db.Model):
